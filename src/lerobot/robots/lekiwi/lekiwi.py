@@ -55,7 +55,7 @@ class LeKiwi(Robot):
         self.bus = FeetechMotorsBus(
             port=self.config.port,
             motors={
-                # arm
+                # right arm
                 "arm_shoulder_pan": Motor(1, "sts3215", norm_mode_body),
                 "arm_shoulder_lift": Motor(2, "sts3215", norm_mode_body),
                 "arm_elbow_flex": Motor(3, "sts3215", norm_mode_body),
@@ -66,6 +66,13 @@ class LeKiwi(Robot):
                 "base_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100),
                 "base_back_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),
                 "base_right_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),
+                # left arm
+                "arm_left_shoulder_pan": Motor(10, "sts3215", norm_mode_body),
+                "arm_left_shoulder_lift": Motor(11, "sts3215", norm_mode_body),
+                "arm_left_elbow_flex": Motor(12, "sts3215", norm_mode_body),
+                "arm_left_wrist_flex": Motor(13, "sts3215", norm_mode_body),
+                "arm_left_wrist_roll": Motor(14, "sts3215", norm_mode_body),
+                "arm_left_gripper": Motor(15, "sts3215", MotorNormMode.RANGE_0_100),
             },
             calibration=self.calibration,
         )
@@ -86,6 +93,12 @@ class LeKiwi(Robot):
                 "x.vel",
                 "y.vel",
                 "theta.vel",
+                "arm_left_shoulder_pan.pos",
+                "arm_left_shoulder_lift.pos",
+                "arm_left_elbow_flex.pos",
+                "arm_left_wrist_flex.pos",
+                "arm_left_wrist_roll.pos",
+                "arm_left_gripper.pos",
             ),
             float,
         )
@@ -153,7 +166,7 @@ class LeKiwi(Robot):
         homing_offsets.update(dict.fromkeys(self.base_motors, 0))
 
         full_turn_motor = [
-            motor for motor in motors if any(keyword in motor for keyword in ["wheel", "wrist"])
+            motor for motor in motors if any(keyword in motor for keyword in ["wheel", "wrist_roll"])
         ]
         unknown_range_motors = [motor for motor in motors if motor not in full_turn_motor]
 
@@ -344,7 +357,7 @@ class LeKiwi(Robot):
 
         # Read actuators position for arm and vel for base
         start = time.perf_counter()
-        arm_pos = self.bus.sync_read("Present_Position", self.arm_motors)
+        arm_pos = self.bus.sync_read("Present_Position", self.arm_motors, num_retry=6)
         base_wheel_vel = self.bus.sync_read("Present_Velocity", self.base_motors)
 
         base_vel = self._wheel_raw_to_body(
